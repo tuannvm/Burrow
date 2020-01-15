@@ -300,6 +300,14 @@ func (module *KafkaClient) startKafkaConsumer(client helpers.SaramaClient) error
 		zap.Int("count", len(partitions)),
 	)
 	for _, partition := range partitions {
+		// Add work around for partition (3,10,17,24,31,38,45) which has the broker 5 (already dead) as a leader
+		if findElement([]int32{3, 10, 17, 24, 31, 38, 45}, partition) && module.offsetsTopic == "__consumer_offsets" {
+			module.Log.Warn("Ignoring...",
+				zap.String("topic", module.offsetsTopic),
+				zap.Int32("partition", partition),
+			)
+			continue
+		}
 		pconsumer, err := consumer.ConsumePartition(module.offsetsTopic, partition, startFrom)
 		if err != nil {
 			module.Log.Error("failed to consume partition",
@@ -828,4 +836,15 @@ func decodeOffsetValueV3(valueBuffer *bytes.Buffer) (offsetValue, string) {
 		return offsetValue, "timestamp"
 	}
 	return offsetValue, ""
+}
+
+// Find takes a slice and looks for an element in it. If found it will
+// return it's key, otherwise it will return -1 and a bool of false.
+func findElement(slice []int32, val int32) bool {
+	for _, item := range slice {
+		if item == val {
+			return true
+		}
+	}
+	return false
 }

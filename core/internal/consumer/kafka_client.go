@@ -305,7 +305,6 @@ func (module *KafkaClient) startKafkaConsumer(client helpers.SaramaClient) error
 			module.Log.Warn("Ignoring...",
 				zap.String("topic", module.offsetsTopic),
 				zap.Int32("partition", partition),
-				zap.String("error", err.Error()),
 			)
 			continue
 		}
